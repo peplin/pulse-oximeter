@@ -1,0 +1,25 @@
+Arduino Pulse Oximieter
+=======================
+
+## About
+
+This repository contains and sketch that turns an Arduino into a basic pulse
+oximeter, as well as a Processing sketch to visualize the detected heartbeat.
+
+A general way look at this code is analog sensor averaging and smoother (it's
+pretty poor, actually).
+
+The project was pulled from the [August 23,
+1966](https://github.com/peplin/august23) repository.
+
+## Author
+
+* Christopher Peplin (chris.peplin@rhubarbtech.com)
+
+Originally created for the [August 23, 1966 (GROCS Project
+Group)](http://christopherpeplin.com/2011/05/august23/).
+
+## License
+
+Copyright (c) 2011-2013 Christopher Peplin
+Licensed under the MIT license.
