@@ -52,8 +52,7 @@ void loop() {
         if(averageIndex >= AVERAGE_COUNT) {
             averageLevel /= AVERAGE_COUNT;
 
-            Serial.print(averageLevel);
-            Serial.print(" ");
+            Serial.println(averageLevel);
 
             averageLevel = 0;
             averageIndex = 0;
