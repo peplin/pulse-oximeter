@@ -24,9 +24,9 @@ int lastAverage = 0;
 boolean upbeat = false;
 
 void setup() {
-    size(1024, 768, P3D);
+    size(800, 600, P2D);
     graph = new float[width];
-    port = new Serial(this, "/dev/ttyUSB2", 115200);
+    port = new Serial(this, Serial.list()[0], 9600);
     stroke(255);
 }
 
