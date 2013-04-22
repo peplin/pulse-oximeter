@@ -8,95 +8,86 @@
 
 import processing.serial.*;
 
-Serial port;
-float graph[];
-int currentIndex = 0;
-int currentAverageIndex = 0;
-final int AVERAGE_COUNT = 10;
-int lastLevel = 1023;
-int lastLevelCount = 0;
-float bigAverage = 0;
-float bigAverageIndex = 0;
-final float BIG_AVERAGE_COUNT = 100;
+final float AVERAGE_COUNT = 10.0;
+final int MINIMUM_VALUE_THRESHOLD = 100;
+final int MAXIMUM_VALUE_THRESHOLD = 800;
 
-float minimumValue = 1023;
-int lastAverage = 0;
+Serial port;
+ArrayList graphValues;
+int overallAverage = 0;
+int average = 0;
+int averageCounter = 0;
+
 boolean upbeat = false;
 
 void setup() {
-    size(800, 600, P2D);
-    graph = new float[width];
-    port = new Serial(this, Serial.list()[0], 9600);
+    size(1600, 400, P2D);
+    graphValues = new ArrayList();
+    port = new Serial(this, Serial.list()[0], 115200);
     stroke(255);
 }
 
-void draw() {
-    background(0);
+String[] readValues() {
     String value = "";
     if(port.available() > 0) {
         value = trim(port.readString());
     }
-    String[] values = value.split("\n");
+    return value.split("\n");
+}
 
-    for(int i = 0; i < values.length; i++) {
-        String trimmedValue = values[i].trim();
-        if(trimmedValue != null && trimmedValue != "") {
-            int y;
+void draw() {
+    background(0);
+
+    for(String value : readValues()) {
+        value = value.trim();
+        int y;
+        if(value != null && value != "") {
             try {
-                y = Integer.parseInt(trimmedValue);
+                y = Integer.parseInt(value);
             } catch (NumberFormatException e) {
-                println("Couldn't parse an integer from " + trimmedValue);
+                println("Couldn't parse an integer from " + value);
                 continue;
             }
+        } else {
+            continue;
+        }
 
-            if(y < 800 && y > 100) {
-                // serial in is often split, creating weird outliers
-                graph[currentIndex] += y;
-                currentAverageIndex++;
-                bigAverage += y;
-                bigAverageIndex++;
-                if(currentAverageIndex == AVERAGE_COUNT) {
-                    if(graph[currentIndex] / (float)AVERAGE_COUNT < minimumValue) {
-                        minimumValue = graph[currentIndex] / (float)AVERAGE_COUNT;
-                    }
-                    float valueAverage = graph[currentIndex] / AVERAGE_COUNT;
-                    if(currentIndex >= 10 && valueAverage < graph[(currentIndex - 10) % width]
-                            / (float)AVERAGE_COUNT && !upbeat) {
-                        if(!upbeat) {
-                            println("value avg: " + valueAverage);
-                            println("minimumValue: " + (bigAverage / bigAverageIndex));
-                            background(255);
-                            upbeat = true;
-                        }
-                    } else if(currentIndex >= 10 && valueAverage
-                            > graph[(currentIndex - 10) % width]
-                            / (float)AVERAGE_COUNT) {
+        if(y < MAXIMUM_VALUE_THRESHOLD && y > MINIMUM_VALUE_THRESHOLD) {
+            average += (y / AVERAGE_COUNT);
+            averageCounter++;
+
+            if(averageCounter == AVERAGE_COUNT) {
+                if(graphValues.size() > 10) {
+                    if(average < (Integer)graphValues.get(graphValues.size() - 10) && !upbeat) {
+                        println("value avg: " + average);
+                        background(255);
+                        upbeat = true;
+                    } else if(average > (Integer)graphValues.get(graphValues.size() - 10)) {
                        upbeat = false;
                     }
-                    currentIndex = (currentIndex + 1) % (width - 1);
-                    graph[currentIndex] = 0;
-                    currentAverageIndex = 0;
                 }
-
-                if(bigAverageIndex == BIG_AVERAGE_COUNT) {
-                    bigAverage = 0;
-                    bigAverageIndex = 0;
+                if(graphValues.size() > width) {
+                    graphValues.remove(0);
                 }
-
+                graphValues.add(average);
+                average = 0;
+                averageCounter = 0;
             }
         }
     }
 
-    beginShape(LINES);
+    noFill();
+    beginShape();
     int x = 0;
-    for(int i = currentIndex + 1; i != currentIndex; i = (i + 1) % (width - 1)) {
-        float valueAverage = graph[i] / AVERAGE_COUNT;
-        vertex(x++, height - map(valueAverage, 0, 1023, 0, height));
+    int newOverallAverage = 0;
+    for(Object value : graphValues) {
+        newOverallAverage += (Integer)value;
+        vertex(x++, height - map((Integer)value, overallAverage - 25,
+                    overallAverage + 25, 0, height));
     }
+    if(graphValues.size() > 0) {
+        newOverallAverage /= graphValues.size();
+    }
+    overallAverage = newOverallAverage;
     endShape();
-}
-
-void keyPressed() {
-    bigAverage = 0;
-    bigAverageIndex = 0;
 }
