@@ -49,7 +49,7 @@ void draw() {
                 continue;
             }
 
-            if(y > 100) {
+            if(y < 800 && y > 100) {
                 // serial in is often split, creating weird outliers
                 graph[currentIndex] += y;
                 currentAverageIndex++;
