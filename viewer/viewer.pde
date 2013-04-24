@@ -11,19 +11,24 @@ import processing.serial.*;
 final float AVERAGE_COUNT = 10.0;
 final int MINIMUM_VALUE_THRESHOLD = 100;
 final int MAXIMUM_VALUE_THRESHOLD = 800;
+final int HORIZONTAL_MULTIPLIER = 4;
+final int GRAPH_CENTER_STEPS = 10;
 
 Serial port;
 ArrayList graphValues;
-int overallAverage = 0;
-int average = 0;
-int averageCounter = 0;
+int graphCenter;
+int targetGraphCenter;
+int average;
+int averageCounter;
+int maxValue;
+int minValue;
 
 boolean upbeat = false;
 
 void setup() {
     size(1600, 400, P2D);
     graphValues = new ArrayList();
-    port = new Serial(this, Serial.list()[0], 115200);
+    port = new Serial(this, "/dev/ttyUSB0", 115200);
     stroke(255);
 }
 
@@ -58,15 +63,19 @@ void draw() {
 
             if(averageCounter == AVERAGE_COUNT) {
                 if(graphValues.size() > 10) {
-                    if(average < (Integer)graphValues.get(graphValues.size() - 10) && !upbeat) {
+                    int previousValue = (Integer)graphValues.get(
+                            graphValues.size() - 10);
+                    if(average < previousValue && !upbeat) {
+                        maxValue = previousValue;
                         println("value avg: " + average);
                         background(255);
                         upbeat = true;
-                    } else if(average > (Integer)graphValues.get(graphValues.size() - 10)) {
+                    } else if(average > previousValue) {
+                        minValue = previousValue;
                        upbeat = false;
                     }
                 }
-                if(graphValues.size() > width) {
+                if(graphValues.size() > width / HORIZONTAL_MULTIPLIER) {
                     graphValues.remove(0);
                 }
                 graphValues.add(average);
@@ -79,15 +88,21 @@ void draw() {
     noFill();
     beginShape();
     int x = 0;
-    int newOverallAverage = 0;
     for(Object value : graphValues) {
-        newOverallAverage += (Integer)value;
-        vertex(x++, height - map((Integer)value, overallAverage - 25,
-                    overallAverage + 25, 0, height));
+        vertex(x, height - map((Integer)value, graphCenter - 50,
+                    graphCenter + 50, 0, height));
+        x += HORIZONTAL_MULTIPLIER;
     }
-    if(graphValues.size() > 0) {
-        newOverallAverage /= graphValues.size();
+    targetGraphCenter = (minValue + maxValue) / 2;
+    if(graphCenter > targetGraphCenter + 10 ||
+            graphCenter < targetGraphCenter - 10) {
+        int change = targetGraphCenter - graphCenter;
+        if(change > 0) {
+            graphCenter += max(10, change);
+        } else {
+            graphCenter += max(-10, change);
+        }
     }
-    overallAverage = newOverallAverage;
+    println("Graph center: " + graphCenter);
     endShape();
 }
